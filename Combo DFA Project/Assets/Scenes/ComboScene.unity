@@ -1484,4 +1484,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b5ec7d5b1745be842a80ef589cf0edc4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  falloutTime: 0.7
+  falloutTime: 5
+  debugNodeGraph: []

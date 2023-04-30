@@ -8,11 +8,12 @@ public class HeroKnightComboStuff : MonoBehaviour
     [SerializeField] float falloutTime;
     private Animator animator;
 
-    
+    public List<string> debugNodeGraph;
     //Example
     int[,] delta;
     // stored in the structure of [ [P] , [K] , [R] , [L] , [U] , [D] ]
     string[] combos = { "RPK", "LRLP", "UPKL", "PDLR", "DPU", "KLPDUR" };
+    //string[] combos = { "RPK" };
     private string comboString; 
     private float falloutTimer;
     public string[,] sortedCombos;
@@ -21,9 +22,13 @@ public class HeroKnightComboStuff : MonoBehaviour
     
     int nodeNum = 0;
 
+
+    int currentDeltaNode = 0;
+
     // Start is called before the first frame update
     void Start()
     {
+        debugNodeGraph = new List<string>();
         animator = GetComponent<Animator>();
         nodesToImplement = new Queue<(int, string[])>();
         pre_delta = new List<List<int>>();
@@ -54,6 +59,23 @@ public class HeroKnightComboStuff : MonoBehaviour
         {
             AddToCombo('k');
         }
+        else if (Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            AddToCombo('r');
+        }
+        else if (Input.GetKeyDown(KeyCode.LeftArrow))
+        {
+            AddToCombo('l');
+        }
+        else if (Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            AddToCombo('u');
+        }
+        else if (Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            AddToCombo('d');
+        }
+
         else if (comboString != "")
         {
             //Update value of timer since last input
@@ -84,7 +106,18 @@ public class HeroKnightComboStuff : MonoBehaviour
     {
         //append letter to combo string
         comboString += letter;
-        Debug.Log("Combo string: " + comboString);
+        //Debug.Log("Combo string: " + comboString);
+
+        int actionNum = ConvertActionToNum(letter);
+        if(actionNum != -1)
+        {
+            currentDeltaNode = delta[currentDeltaNode,actionNum];
+            if(currentDeltaNode == 0)
+            {
+                ResetCombo();
+            }
+        }
+        
         //Check if combo string has options
         CheckForCombo();
 
@@ -92,15 +125,43 @@ public class HeroKnightComboStuff : MonoBehaviour
         falloutTimer = 0;
     }
 
+    int ConvertActionToNum(char action)
+    {
+        switch (char.ToLower(action))
+        {
+            case 'p':
+                return 0;
+            case 'k':
+                return 1;
+            case 'r':
+                return 2;
+            case 'l':
+                return 3;
+            case 'u':
+                return 4;
+            case 'd':
+                return 5;
+            default:
+                return -1;
+        }
+    }
+
     void CheckForCombo()
     {
         //Check if combo is done
+        if(currentDeltaNode == -1)
+        {
+            //DO thing
+            Debug.Log($"Combo {comboString} Done!!!!");
+            ResetCombo();
+        }
     }
 
     void ResetCombo()
     {
         falloutTimer = 0;
         comboString = "";
+        currentDeltaNode = 0;
     }
 
     void DFAGen()
@@ -135,7 +196,6 @@ public class HeroKnightComboStuff : MonoBehaviour
         //Sort into relevant group, Cut the first letter
         for (int i = 0; i < states.Length; i++)
         {
-            int relevantArrayLength = -1;
             //Make lower for less errors
             char firstChar = char.ToLower(states[i][0]);
 
@@ -175,42 +235,49 @@ public class HeroKnightComboStuff : MonoBehaviour
         }
 
         //Print for debug purposes
-        for (int i = 0; i < states.Length; i++)
-        {
-            for(int j = 0; j <= lengths[i]; j++)
-            {
+        //for (int i = 0; i < states.Length; i++)
+        //{
+        //    for (int j = 0; j <= lengths[i]; j++)
+        //    {
+
                 
-                print(next[i, j]);
-            }
-        }
+        //    }
+        //}
 
 
         //Initialize future connections for this node
         int[] specific_delta = {0, 0, 0, 0, 0, 0};
-        for (int i = 0; i < states.Length; i++)
+        for (int i = 0; i < 6; i++)
         {
             //If there will be a future node, 
 
             //ERROR HERE. PROBS NEEDS TO BE 6 OR SOMETHIN
-            if (next.GetLength(i) != 0)
+            if (lengths[i] != 0)
             {
-                nodeNum++;
-                specific_delta[i] = nodeNum;
-                int length = next.GetLength(i);
-                string[] nextArray = new string[length];
-                for (int j = 0; j < length; j++)
+                if (lengths[i] == 1 && next[i, 0] == "")
                 {
-                    nextArray[j] = next[i, j];
-                }
+                    //End of the combo
 
-                (int, string[]) node = (nodeNum, nextArray);
-                nodesToImplement.Enqueue(node);
+                    specific_delta[i] = -1;
+
+
+                }
+                else
+                {
+                    nodeNum++;
+                    specific_delta[i] = nodeNum;
+                    int length = lengths[i];
+                    string[] nextArray = new string[length];
+                    for (int j = 0; j < length; j++)
+                    {
+                        nextArray[j] = next[i, j];
+                    }
+
+                    (int, string[]) node = (nodeNum, nextArray);
+                    nodesToImplement.Enqueue(node);
+                }
             }
-            //End of the combo
-            else
-            {
-                specific_delta[i] = -1;
-            }
+            
 
         }
 
@@ -219,6 +286,40 @@ public class HeroKnightComboStuff : MonoBehaviour
         {
             delta[thisNodeIndex, i] = specific_delta[i];
         }
-       
-    }
+
+        //Store for debug purposes
+            string fortnite = "";
+            for (int j = 0; j < 6; j++)
+            {
+            switch (j)
+            {
+                case 0:
+                    fortnite += "Punch: ";
+                    break;
+                case 1:
+                    fortnite += "Kick: ";
+                    break;
+                case 2:
+                    fortnite += "Right: ";
+                    break;
+                case 3:
+                    fortnite += "Left: ";
+                    break;
+                case 4:
+                    fortnite += "Up: ";
+                    break;
+                case 5:
+                    fortnite += "Down: ";
+                    break;
+
+            }
+
+            fortnite += specific_delta[j].ToString();
+                if (j != 5)
+                {
+                    fortnite += ", ";
+                }
+            }
+            debugNodeGraph.Add(fortnite);
+        }  
 }
