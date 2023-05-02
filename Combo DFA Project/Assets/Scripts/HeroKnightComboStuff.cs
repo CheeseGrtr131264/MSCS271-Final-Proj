@@ -53,32 +53,32 @@ public class HeroKnightComboStuff : MonoBehaviour
         //Reference - how to call get key down
         //Input.GetKeyDown("e")
 
-        if (Input.GetMouseButtonDown(0) || Input.GetKeyDown("j"))
-        {
-            AddToCombo('p');
-        }
-        else if (Input.GetMouseButtonDown(1) || Input.GetKeyDown("k"))
-        {
-            AddToCombo('k');
-        }
-        else if (Input.GetKeyDown(KeyCode.RightArrow))
-        {
-            AddToCombo('r');
-        }
-        else if (Input.GetKeyDown(KeyCode.LeftArrow))
-        {
-            AddToCombo('l');
-        }
-        else if (Input.GetKeyDown(KeyCode.UpArrow))
-        {
-            AddToCombo('u');
-        }
-        else if (Input.GetKeyDown(KeyCode.DownArrow))
-        {
-            AddToCombo('d');
-        }
+        //if (Input.GetMouseButtonDown(0) || Input.GetKeyDown("j"))
+        //{
+        //    AddToCombo('p');
+        //}
+        //else if (Input.GetMouseButtonDown(1) || Input.GetKeyDown("k"))
+        //{
+        //    AddToCombo('k');
+        //}
+        //else if (Input.GetKeyDown(KeyCode.RightArrow))
+        //{
+        //    AddToCombo('r');
+        //}
+        //else if (Input.GetKeyDown(KeyCode.LeftArrow))
+        //{
+        //    AddToCombo('l');
+        //}
+        //else if (Input.GetKeyDown(KeyCode.UpArrow))
+        //{
+        //    AddToCombo('u');
+        //}
+        //else if (Input.GetKeyDown(KeyCode.DownArrow))
+        //{
+        //    AddToCombo('d');
+        //}
 
-        else if (comboString != "")
+        if (comboString != "")
         {
             //Update value of timer since last input
             falloutTimer += Time.deltaTime;
@@ -90,6 +90,33 @@ public class HeroKnightComboStuff : MonoBehaviour
             }
         }
     }
+
+    void OnUp()
+    {
+        AddToCombo('u');
+    }
+    void OnDown()
+    {
+        AddToCombo('d');
+    }
+    void OnRight()
+    {
+        AddToCombo('r');
+    }
+    void OnLeft()
+    {
+        AddToCombo('l');
+    }
+     void OnPunch()
+    {
+        AddToCombo('p');
+    }
+    void OnKick()
+    {
+        AddToCombo('k');
+    }
+
+
 
     void InitializeDelta()
     {
