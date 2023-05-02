@@ -12,7 +12,9 @@ public class HeroKnightComboStuff : MonoBehaviour
     //Example
     int[,] delta;
     // stored in the structure of [ [P] , [K] , [R] , [L] , [U] , [D] ]
-    string[] combos = { "RPK", "LRLP", "UPKL", "PDLR", "DPU", "KLPDUR" };
+
+    string[] combos = { "RPK", "LRLP", "UPKL", "PDLR", "DPU", "KLPDUP" };
+
     //string[] combos = { "RPK" };
     private string comboString; 
     private float falloutTimer;
