@@ -16,12 +16,12 @@ public class HeroKnightComboStuff : MonoBehaviour
     string[] combos = { "RPK", "LRLP", "UPKL", "PDLR", "DPU", "KLPDUP" };
 
     //string[] combos = { "RPK" };
-    private string comboString; 
+    private string comboString;
     private float falloutTimer;
     public string[,] sortedCombos;
     List<List<int>> pre_delta;
     Queue<(int, string[])> nodesToImplement;
-    
+    private Rigidbody2D knightRB;
     int nodeNum = 0;
 
 
@@ -30,6 +30,7 @@ public class HeroKnightComboStuff : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        knightRB = GetComponent<Rigidbody2D>();
         debugNodeGraph = new List<string>();
         animator = GetComponent<Animator>();
         nodesToImplement = new Queue<(int, string[])>();
@@ -84,7 +85,7 @@ public class HeroKnightComboStuff : MonoBehaviour
             falloutTimer += Time.deltaTime;
 
             //Reset combo if too much time has passed since last input
-            if(falloutTimer >= falloutTime)
+            if (falloutTimer >= falloutTime)
             {
                 ResetCombo();
             }
@@ -107,7 +108,7 @@ public class HeroKnightComboStuff : MonoBehaviour
     {
         AddToCombo('l');
     }
-     void OnPunch()
+    void OnPunch()
     {
         AddToCombo('p');
     }
@@ -123,7 +124,7 @@ public class HeroKnightComboStuff : MonoBehaviour
         int maxSize = 0;
         for (int i = 0; i < combos.Length; i++)
         {
-            for(int j = 0; j < combos[i].Length; j++)
+            for (int j = 0; j < combos[i].Length; j++)
             {
                 maxSize++;
             }
@@ -138,15 +139,15 @@ public class HeroKnightComboStuff : MonoBehaviour
         //Debug.Log("Combo string: " + comboString);
 
         int actionNum = ConvertActionToNum(letter);
-        if(actionNum != -1)
+        if (actionNum != -1)
         {
-            currentDeltaNode = delta[currentDeltaNode,actionNum];
-            if(currentDeltaNode == 0)
+            currentDeltaNode = delta[currentDeltaNode, actionNum];
+            if (currentDeltaNode == 0)
             {
                 ResetCombo();
             }
         }
-        
+
         //Check if combo string has options
         CheckForCombo();
 
@@ -178,9 +179,36 @@ public class HeroKnightComboStuff : MonoBehaviour
     void CheckForCombo()
     {
         //Check if combo is done
-        if(currentDeltaNode == -1)
+        if (currentDeltaNode == -1)
         {
-            //DO thing
+            //Play combo based on string
+            switch (comboString.ToLower())
+            {
+                case "rpk":
+                    animator.Play("Attack1", 0, 0);
+                    break;
+
+                case "lrlp":
+                    animator.Play("Attack3", 0, 0);
+                    break;
+
+                case "upkl":
+                    animator.Play("Roll", 0, 0);
+                    break;
+
+                case "pdkl":
+                    animator.Play("Block", 0, 0);
+                    break;
+
+                case "dpu":
+                    knightRB.AddForce(new Vector2(0, 5), ForceMode2D.Impulse);
+                    animator.Play("Jump", 0, 0);
+                    break;
+
+                case "klpdup":
+                    animator.Play("DeathNoBlood", 0, 0);
+                    break;
+            }
             Debug.Log($"Combo {comboString} Done!!!!");
             ResetCombo();
         }
@@ -218,7 +246,7 @@ public class HeroKnightComboStuff : MonoBehaviour
         //Maximum number of potential states, probably less than this but needed for array generation
         int maxLength = states.Length;
         //Initialized so each index could potentially hold all future connections
-        next = new string[6,maxLength];
+        next = new string[6, maxLength];
         //Holds the number of connections for each action
         int[] lengths = new int[6];
 
@@ -269,13 +297,13 @@ public class HeroKnightComboStuff : MonoBehaviour
         //    for (int j = 0; j <= lengths[i]; j++)
         //    {
 
-                
+
         //    }
         //}
 
 
         //Initialize future connections for this node
-        int[] specific_delta = {0, 0, 0, 0, 0, 0};
+        int[] specific_delta = { 0, 0, 0, 0, 0, 0 };
         for (int i = 0; i < 6; i++)
         {
             //If there will be a future node, 
@@ -306,20 +334,20 @@ public class HeroKnightComboStuff : MonoBehaviour
                     nodesToImplement.Enqueue(node);
                 }
             }
-            
+
 
         }
 
         //Set delta to proper values
-        for(int i = 0; i < 6; i++)
+        for (int i = 0; i < 6; i++)
         {
             delta[thisNodeIndex, i] = specific_delta[i];
         }
 
         //Store for debug purposes
-            string fortnite = "";
-            for (int j = 0; j < 6; j++)
-            {
+        string fortnite = "";
+        for (int j = 0; j < 6; j++)
+        {
             switch (j)
             {
                 case 0:
@@ -344,11 +372,11 @@ public class HeroKnightComboStuff : MonoBehaviour
             }
 
             fortnite += specific_delta[j].ToString();
-                if (j != 5)
-                {
-                    fortnite += ", ";
-                }
+            if (j != 5)
+            {
+                fortnite += ", ";
             }
-            debugNodeGraph.Add(fortnite);
-        }  
+        }
+        debugNodeGraph.Add(fortnite);
+    }
 }
