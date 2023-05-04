@@ -13,7 +13,7 @@ public class HeroKnightComboStuff : MonoBehaviour
     int[,] delta;
     // stored in the structure of [ [P] , [K] , [R] , [L] , [U] , [D] ]
 
-    string[] combos = { "RPK", "LRLP", "UPKL", "PDLR", "DPU", "KLPDUP" };
+    [SerializeField] string[] combos;
 
     //string[] combos = { "RPK" };
     private string comboString;
