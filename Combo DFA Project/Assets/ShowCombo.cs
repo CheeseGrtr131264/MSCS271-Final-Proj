@@ -6,21 +6,37 @@ using TMPro;
 public class ShowCombo : MonoBehaviour
 {
     [SerializeField] HeroKnightComboStuff combo;
-    [SerializeField] TMP_Text text;
+    [SerializeField] TMP_Text currComboText;
+    [SerializeField] TMP_Text prevInputText;
 
     // Update is called once per frame
     void Update()
     {
-        if(combo != null && text != null)
+        if(combo != null)
         {
-            string comboString = combo.GetComboString();
-            if(comboString != "")
+            if (currComboText != null)
             {
-                text.text = combo.GetComboString();
+                string comboString = combo.GetComboString();
+                if (comboString != "")
+                {
+                    currComboText.text = comboString;
+                }
+                else
+                {
+                    currComboText.text = "No combo";
+                }
             }
-            else
+            if(prevInputText != null)
             {
-                text.text = "Start combo pls";
+                string prevInputString = combo.GetPrevInputString();
+                if (prevInputString != "")
+                {
+                    prevInputText.text = prevInputString;
+                }
+                else
+                {
+                    prevInputText.text = "No inputs";
+                }
             }
             
         }

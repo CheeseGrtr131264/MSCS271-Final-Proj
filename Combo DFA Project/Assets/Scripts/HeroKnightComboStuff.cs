@@ -2,30 +2,50 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class HeroKnightComboStuff : MonoBehaviour
 {
     [SerializeField] float falloutTime;
     private Animator animator;
-
+    private float moveStrength = 0;
     public List<string> debugNodeGraph;
     //Example
     int[,] delta;
+    private float maxSpeed;
     // stored in the structure of [ [P] , [K] , [R] , [L] , [U] , [D] ]
 
-    [SerializeField] string[] combos;
+    //[SerializeField] string[] combos;
+    Dictionary<string, string> combos = new Dictionary<string, string>() { 
+        ["RPK"] = "Attack1" , 
+        ["LRP"] = "Attack3",
+        ["UPKL"] = "Roll",
+        ["PDLR"] = "Block",
+        ["DPU"] = "Jump",
+        ["KLPDUP"] = "DeathNoBlood"
+
+    
+    }; //, "LRLP", "UPKL", "PDLR", "DPU", "KLPDUP" });
+    //string[] combos = { "RPK", "LRLP", "UPKL", "PDLR", "DPU", "KLPDUP" };
 
     //string[] combos = { "RPK" };
     private string comboString;
+    private string lastInputs = "";
     private float falloutTimer;
     public string[,] sortedCombos;
+    int lastInputsMaxLength = 10;
     List<List<int>> pre_delta;
     Queue<(int, string[])> nodesToImplement;
     private Rigidbody2D knightRB;
+    float lastInputDeleteTime = 3;
     int nodeNum = 0;
 
 
+
+    float lastDeleteTime = -1;
+
     int currentDeltaNode = 0;
+    float moveSpeed = 5;
 
     // Start is called before the first frame update
     void Start()
@@ -45,9 +65,22 @@ public class HeroKnightComboStuff : MonoBehaviour
     {
         return comboString;
     }
+    public string GetPrevInputString()
+    {
+        return lastInputs;
+    }
     // Update is called once per frame
     void Update()
     {
+        if (moveStrength != 0)
+        {
+            Vector2 pastVel = knightRB.velocity;
+            float thing = pastVel.x + (moveStrength * moveSpeed);
+            // knightRB.velocity = new Vector2(Mathf.Clamp(thing, -maxSpeed, maxSpeed), 0);
+
+           // knightRB.velocity = new Vector2(pastVel.x + moveStrength * moveSpeed, 0);
+            knightRB.velocity += new Vector2(Mathf.Clamp(thing, -maxSpeed, maxSpeed), 0);
+        }
         //Reference - how to call mouse button down
         //Input.GetMouseButtonDown(0)
 
@@ -90,31 +123,77 @@ public class HeroKnightComboStuff : MonoBehaviour
                 ResetCombo();
             }
         }
+        if(lastInputs != "")
+        {
+            if(Time.time - lastInputDeleteTime > lastDeleteTime)
+            {
+                lastInputDeleteTime = Time.time;
+                lastInputs = lastInputs.Substring(0, lastInputs.Length - 1);
+            }
+            
+        }
+        //else if (lastDeleteTime != -1)
+        //{
+        //    lastDeleteTime = -1;
+        //}
     }
 
-    void OnUp()
+    public void OnUp(InputAction.CallbackContext value)
     {
-        AddToCombo('u');
+        if (value.started)
+        {
+            AddToCombo('u');
+        }
     }
-    void OnDown()
+    public void OnDown(InputAction.CallbackContext value)
     {
-        AddToCombo('d');
+        if (value.started)
+        {
+            AddToCombo('d');
+        }
     }
-    void OnRight()
+    public void OnRight(InputAction.CallbackContext value)
     {
-        AddToCombo('r');
+        if (value.started)
+        {
+            AddToCombo('r');
+        }
     }
-    void OnLeft()
+    public void OnLeft(InputAction.CallbackContext value)
     {
-        AddToCombo('l');
+        if (value.started)
+        {
+            AddToCombo('l');
+        }
     }
-    void OnPunch()
+    public void OnPunch(InputAction.CallbackContext value)
     {
-        AddToCombo('p');
+        if (value.started)
+        {
+            AddToCombo('p');
+        }
     }
-    void OnKick()
+    public void OnKick(InputAction.CallbackContext value)
     {
-        AddToCombo('k');
+        if (value.started)
+        {
+            AddToCombo('k');
+        }
+        
+    }
+    public void OnMoveLR(InputAction.CallbackContext value)
+    {
+        print("On Move LR called");
+        //if(value.valueType == )
+        moveStrength = value.ReadValue<float>();
+        //if (!value.canceled)
+        //{
+        //    knightRB.AddForce(new Vector2(value.ReadValue<float>() * 20, 0));
+        //}
+        //else
+        //{
+        //    moveStrength = 0;
+        //}
     }
 
 
@@ -122,9 +201,10 @@ public class HeroKnightComboStuff : MonoBehaviour
     void InitializeDelta()
     {
         int maxSize = 0;
-        for (int i = 0; i < combos.Length; i++)
+        string[] comboStrings = combos.Keys.ToArray();
+        for (int i = 0; i < comboStrings.Length; i++)
         {
-            for (int j = 0; j < combos[i].Length; j++)
+            for (int j = 0; j < comboStrings[i].Length; j++)
             {
                 maxSize++;
             }
@@ -137,6 +217,16 @@ public class HeroKnightComboStuff : MonoBehaviour
         //append letter to combo string
         comboString += letter;
         //Debug.Log("Combo string: " + comboString);
+
+        if(lastInputs.Length == 0)
+        {
+            lastDeleteTime = Time.time;
+        }
+        lastInputs = letter.ToString() + lastInputs;
+        if (lastInputs.Length > lastInputsMaxLength)
+        {
+            lastInputs = lastInputs.Substring(0, lastInputsMaxLength);
+        }
 
         int actionNum = ConvertActionToNum(letter);
         if (actionNum != -1)
@@ -176,39 +266,48 @@ public class HeroKnightComboStuff : MonoBehaviour
         }
     }
 
+    void PerformCombo(string comboString)
+    {
+        if (combos.GetValueOrDefault(comboString, null) != null)
+        {
+            animator.Play(combos[comboString]);
+        }
+        //switch (comboString.ToLower())
+        //{
+        //    case "rpk":
+        //        animator.Play("Attack1", 0, 0);
+        //        break;
+
+        //    case "lrlp":
+        //        animator.Play("Attack3", 0, 0);
+        //        break;
+
+        //    case "upkl":
+        //        animator.Play("Roll", 0, 0);
+        //        break;
+
+        //    case "pdkl":
+        //        animator.Play("Block", 0, 0);
+        //        break;
+
+        //    case "dpu":
+        //        knightRB.AddForce(new Vector2(0, 5), ForceMode2D.Impulse);
+        //        animator.Play("Jump", 0, 0);
+        //        break;
+
+        //    case "klpdup":
+        //        animator.Play("DeathNoBlood", 0, 0);
+        //        break;
+        //}
+    }
     void CheckForCombo()
     {
         //Check if combo is done
         if (currentDeltaNode == -1)
         {
+            PerformCombo(comboString.ToLower());
             //Play combo based on string
-            switch (comboString.ToLower())
-            {
-                case "rpk":
-                    animator.Play("Attack1", 0, 0);
-                    break;
-
-                case "lrlp":
-                    animator.Play("Attack3", 0, 0);
-                    break;
-
-                case "upkl":
-                    animator.Play("Roll", 0, 0);
-                    break;
-
-                case "pdkl":
-                    animator.Play("Block", 0, 0);
-                    break;
-
-                case "dpu":
-                    knightRB.AddForce(new Vector2(0, 5), ForceMode2D.Impulse);
-                    animator.Play("Jump", 0, 0);
-                    break;
-
-                case "klpdup":
-                    animator.Play("DeathNoBlood", 0, 0);
-                    break;
-            }
+            
             Debug.Log($"Combo {comboString} Done!!!!");
             ResetCombo();
         }
@@ -226,7 +325,7 @@ public class HeroKnightComboStuff : MonoBehaviour
         int iterations = 0;
         //First iteration
 
-        StateGen(0, combos);
+        StateGen(0, combos.Keys.ToArray());
         while (nodesToImplement.Count != 0 && iterations < 1000)
         {
             iterations++;
