@@ -12,21 +12,22 @@ public class HeroKnightComboStuff : MonoBehaviour
     public List<string> debugNodeGraph;
     //Example
     int[,] delta;
-    private float maxSpeed;
+    private float maxSpeed = 4;
+    SpriteRenderer sprite;
     // stored in the structure of [ [P] , [K] , [R] , [L] , [U] , [D] ]
 
     //[SerializeField] string[] combos;
-    Dictionary<string, string> combos = new Dictionary<string, string>() { 
-        ["RPK"] = "Attack1" , 
+    Dictionary<string, string> combos = new Dictionary<string, string>() {
+        ["RPK"] = "Attack1",
         ["LRP"] = "Attack3",
-        ["UPKL"] = "Roll",
+        ["UPLK"] = "Roll",
         ["PDLR"] = "Block",
-        ["DPU"] = "Jump",
+        ["UDU"] = "Jump",
         ["KLPDUP"] = "DeathNoBlood"
 
-    
+
     }; //, "LRLP", "UPKL", "PDLR", "DPU", "KLPDUP" });
-    //string[] combos = { "RPK", "LRLP", "UPKL", "PDLR", "DPU", "KLPDUP" };
+    //string[] combosReference = { "RPK", "LRP", "UPLK", "PDLR", "DPU", "KLPDUP" };
 
     //string[] combos = { "RPK" };
     private string comboString;
@@ -45,11 +46,12 @@ public class HeroKnightComboStuff : MonoBehaviour
     float lastDeleteTime = -1;
 
     int currentDeltaNode = 0;
-    float moveSpeed = 5;
+    float moveSpeed = 1;
 
     // Start is called before the first frame update
     void Start()
     {
+        sprite = GetComponent<SpriteRenderer>();
         knightRB = GetComponent<Rigidbody2D>();
         debugNodeGraph = new List<string>();
         animator = GetComponent<Animator>();
@@ -60,58 +62,93 @@ public class HeroKnightComboStuff : MonoBehaviour
         DFAGen();
     }
 
+    bool isAnimPlaying()
+    {
+        return !animator.GetCurrentAnimatorStateInfo(0).IsName("Walk") || animator.GetCurrentAnimatorStateInfo(0).length >
+             animator.GetCurrentAnimatorStateInfo(0).normalizedTime;
+    }
+
     //Called by ShowCombo
     public string GetComboString()
     {
         return comboString;
     }
+    public Dictionary<string, string> GetCombos()
+    {
+        return combos;
+    }
     public string GetPrevInputString()
     {
         return lastInputs;
     }
-    // Update is called once per frame
+
+    void FixedUpdate()
+    {
+        //if (moveStrength != 0)
+        //{
+        Vector2 pastVel = knightRB.velocity;
+        float newVel = pastVel.x + (moveStrength * moveSpeed);
+        if (moveStrength == 0)
+        {
+            SetWalk(false);
+            
+            if (pastVel.x <= 0)
+            {
+
+                newVel = Mathf.Clamp(pastVel.x + moveSpeed, -maxSpeed, 0);
+            }
+            else
+            {
+                newVel = Mathf.Clamp(pastVel.x - moveSpeed, 0, maxSpeed);
+            }
+
+        }
+        else
+        {
+            SetWalk(true);
+        }
+        // knightRB.velocity = new Vector2(Mathf.Clamp(thing, -maxSpeed, maxSpeed), 0);
+
+        // knightRB.velocity = new Vector2(pastVel.x + moveStrength * moveSpeed, 0);
+
+        knightRB.velocity = new Vector2(Mathf.Clamp(newVel, -maxSpeed, maxSpeed), pastVel.y);
+        //Debug.Log("MoveStrength:" + moveStrength.ToString());
+       // Debug.Log("CurrentVel: " + knightRB.velocity.x.ToString());
+        //}
+    }
+    //Reference - how to call mouse button down
+    //Input.GetMouseButtonDown(0)
+
+    //Reference - how to call get key down
+    //Input.GetKeyDown("e")
+
+    //if (Input.GetMouseButtonDown(0) || Input.GetKeyDown("j"))
+    //{
+    //    AddToCombo('p');
+    //}
+    //else if (Input.GetMouseButtonDown(1) || Input.GetKeyDown("k"))
+    //{
+    //    AddToCombo('k');
+    //}
+    //else if (Input.GetKeyDown(KeyCode.RightArrow))
+    //{
+    //    AddToCombo('r');
+    //}
+    //else if (Input.GetKeyDown(KeyCode.LeftArrow))
+    //{
+    //    AddToCombo('l');
+    //}
+    //else if (Input.GetKeyDown(KeyCode.UpArrow))
+    //{
+    //    AddToCombo('u');
+    //}
+    //else if (Input.GetKeyDown(KeyCode.DownArrow))
+    //{
+    //    AddToCombo('d');
+    //}
+
     void Update()
     {
-        if (moveStrength != 0)
-        {
-            Vector2 pastVel = knightRB.velocity;
-            float thing = pastVel.x + (moveStrength * moveSpeed);
-            // knightRB.velocity = new Vector2(Mathf.Clamp(thing, -maxSpeed, maxSpeed), 0);
-
-           // knightRB.velocity = new Vector2(pastVel.x + moveStrength * moveSpeed, 0);
-            knightRB.velocity += new Vector2(Mathf.Clamp(thing, -maxSpeed, maxSpeed), 0);
-        }
-        //Reference - how to call mouse button down
-        //Input.GetMouseButtonDown(0)
-
-        //Reference - how to call get key down
-        //Input.GetKeyDown("e")
-
-        //if (Input.GetMouseButtonDown(0) || Input.GetKeyDown("j"))
-        //{
-        //    AddToCombo('p');
-        //}
-        //else if (Input.GetMouseButtonDown(1) || Input.GetKeyDown("k"))
-        //{
-        //    AddToCombo('k');
-        //}
-        //else if (Input.GetKeyDown(KeyCode.RightArrow))
-        //{
-        //    AddToCombo('r');
-        //}
-        //else if (Input.GetKeyDown(KeyCode.LeftArrow))
-        //{
-        //    AddToCombo('l');
-        //}
-        //else if (Input.GetKeyDown(KeyCode.UpArrow))
-        //{
-        //    AddToCombo('u');
-        //}
-        //else if (Input.GetKeyDown(KeyCode.DownArrow))
-        //{
-        //    AddToCombo('d');
-        //}
-
         if (comboString != "")
         {
             //Update value of timer since last input
@@ -123,14 +160,14 @@ public class HeroKnightComboStuff : MonoBehaviour
                 ResetCombo();
             }
         }
-        if(lastInputs != "")
+        if (lastInputs != "")
         {
-            if(Time.time - lastInputDeleteTime > lastDeleteTime)
+            if (Time.time - lastInputDeleteTime > lastDeleteTime)
             {
                 lastInputDeleteTime = Time.time;
                 lastInputs = lastInputs.Substring(0, lastInputs.Length - 1);
             }
-            
+
         }
         //else if (lastDeleteTime != -1)
         //{
@@ -179,7 +216,7 @@ public class HeroKnightComboStuff : MonoBehaviour
         {
             AddToCombo('k');
         }
-        
+
     }
     public void OnMoveLR(InputAction.CallbackContext value)
     {
@@ -218,7 +255,7 @@ public class HeroKnightComboStuff : MonoBehaviour
         comboString += letter;
         //Debug.Log("Combo string: " + comboString);
 
-        if(lastInputs.Length == 0)
+        if (lastInputs.Length == 0)
         {
             lastDeleteTime = Time.time;
         }
@@ -268,38 +305,72 @@ public class HeroKnightComboStuff : MonoBehaviour
 
     void PerformCombo(string comboString)
     {
-        if (combos.GetValueOrDefault(comboString, null) != null)
-        {
-            animator.Play(combos[comboString]);
+        string actionString = combos[comboString.ToUpper()];
+        if(actionString == "Jump") { 
+            Debug.Log("Combo string is " + actionString);
+            knightRB.AddForce(new Vector2(0, 5), ForceMode2D.Impulse);
         }
-        //switch (comboString.ToLower())
+        else
+        {
+            Debug.Log("Action string is " + actionString);
+        }
+        PlayAnim(comboString);
+    }
+
+
+    void PlayAnim(string comboString)
+    {
+        string associatedAnim = combos[comboString.ToUpper()];
+
+        //Debug.Log("Trying to execute " + upperCombo);
+        animator.Play(associatedAnim, 0, 0);
+        //if (knightRB.velocity != Vector2.zero)
         //{
-        //    case "rpk":
-        //        animator.Play("Attack1", 0, 0);
-        //        break;
-
-        //    case "lrlp":
-        //        animator.Play("Attack3", 0, 0);
-        //        break;
-
-        //    case "upkl":
-        //        animator.Play("Roll", 0, 0);
-        //        break;
-
-        //    case "pdkl":
-        //        animator.Play("Block", 0, 0);
-        //        break;
-
-        //    case "dpu":
-        //        knightRB.AddForce(new Vector2(0, 5), ForceMode2D.Impulse);
-        //        animator.Play("Jump", 0, 0);
-        //        break;
-
-        //    case "klpdup":
-        //        animator.Play("DeathNoBlood", 0, 0);
-        //        break;
+        //    knightRB.velocity = Vector2.zero;
         //}
     }
+    void SetWalk(bool walkVal)
+    {
+        if(knightRB.velocity.x > 0)
+        {
+            sprite.flipX = false;
+        }
+        else if (knightRB.velocity.x < 0)
+        {
+            sprite.flipX = true;
+        }
+        animator.SetBool("IsRunning", walkVal);
+
+    }
+
+            //switch (comboString.ToLower())
+            //{
+            //    case "rpk":
+            //        animator.Play("Attack1", 0, 0);
+            //        break;
+
+            //    case "lrlp":
+            //        animator.Play("Attack3", 0, 0);
+            //        break;
+
+            //    case "upkl":
+            //        animator.Play("Roll", 0, 0);
+            //        break;
+
+            //    case "pdkl":
+            //        animator.Play("Block", 0, 0);
+            //        break;
+
+            //    case "dpu":
+            //        knightRB.AddForce(new Vector2(0, 5), ForceMode2D.Impulse);
+            //        animator.Play("Jump", 0, 0);
+            //        break;
+
+            //    case "klpdup":
+            //        animator.Play("DeathNoBlood", 0, 0);
+            //        break;
+            //}
+        
     void CheckForCombo()
     {
         //Check if combo is done

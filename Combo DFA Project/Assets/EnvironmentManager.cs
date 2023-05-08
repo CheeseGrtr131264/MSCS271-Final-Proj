@@ -35,6 +35,17 @@ public class EnvironmentManager : MonoBehaviour
 
     void GenerateDelta()
     {
+        delta = new int[8, 2]{
+            {1,2 },
+            {2,3},
+            {0,3 },
+            {6,4 },
+            {7,6 },
+            {4,7 },
+            {7,5 },
+            {1,2 }
+        };
+        return;
         if (environments != null && environments.Count != 0)
         {
             delta = new int[environments.Count, 2];
@@ -97,7 +108,7 @@ public class EnvironmentManager : MonoBehaviour
     {
         thueMorseNum += 1; 
         int newNodePos = -1;
-        string binaryNodePos = Convert.ToString(nodePos, 2);
+        string binaryNodePos = Convert.ToString(thueMorseNum, 2);
         int numOnes = binaryNodePos.Split('1').Length - 1;
         newNodePos = delta[nodePos,numOnes % 2];
         GameObject newEnviro = Instantiate(environments[newNodePos], new Vector3(0, 0, 0), Quaternion.identity);
